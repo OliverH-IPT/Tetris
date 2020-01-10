@@ -1,1 +1,8 @@
+**/.vs/
+**/Debug
+**/Release/
+**/x64/
 
+*.filters
+*.ini
+*.user
