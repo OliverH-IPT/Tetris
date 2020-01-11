@@ -1,9 +1,5 @@
 #include "pch.h"
-#include <iostream>
-#include <string>
-#include <thread>
-#include <vector>
-#include <windows.h>
+
 
 using namespace std;
 
@@ -178,35 +174,131 @@ namespace windowsHelper {
 	void deleteScreen() {
 		delete[] screen;
 	}
+
+	list<pair<string, int>> lHighScores;
+
+	void getHighScores() 
+	{
+		lHighScores.clear();
+
+		TCHAR path[MAX_PATH];
+		GetModuleFileName(NULL, path, MAX_PATH);
+		wstring folder(path);
+		folder.erase(folder.find_last_of(L"\\")+1);
+
+		fstream f(folder+L"highscore.txt", fstream::in);
+		if (f.good())
+		{
+			string name;
+			int score = 0;
+			while (f >> name >> score) 
+				lHighScores.push_back(pair<string, int>(name, score));
+		}
+
+		f.close();
+	}
+
+	const int nHighScoreCount = 10;
+
+	bool checkHighScore(int score) 
+	{
+		if (lHighScores.size() < nHighScoreCount) return true;
+		for (auto hs = lHighScores.begin(); hs != lHighScores.end(); hs++)
+			if (score > hs->second) {
+				return true;
+			}
+
+		return false;
+	}
+
+	void writeHighscore()
+	{
+		TCHAR cPath[MAX_PATH];
+		GetModuleFileName(NULL, cPath, MAX_PATH);
+		wstring sFolder(cPath);
+		sFolder.erase(sFolder.find_last_of(L"\\") + 1);
+
+		ofstream f(sFolder + L"highscore.txt", ofstream::trunc);
+		if (f.good())
+			for (auto &hs : lHighScores)
+				f << hs.first << " " << hs.second << endl;
+		f.close();
+	}
+
+	void updateHighscore(pair<string, int>&& pCandidate)
+	{
+		if (lHighScores.empty())
+			lHighScores.push_back(pCandidate);
+		else
+		{
+			for (auto hs = lHighScores.begin(); hs != lHighScores.end(); hs++)
+				if (pCandidate.second > hs->second) {
+					lHighScores.insert(hs, pCandidate);
+					while (lHighScores.size() > nHighScoreCount) lHighScores.pop_back();
+					break;
+				}
+		}
+	}
 }
 
 namespace miscHelper {
 	bool handleGameOver(int nScore) 
 	{
-		cout << "		Game Over!! Score " << nScore << endl;
-		cout << "----------------------------------------------" << endl;
-		cout << "		Play Again ? (y/n) " << endl;
+		system("cls");
+		std::cout << "---------------        " << "Game Over!! " << endl;
+		this_thread::sleep_for(250ms);
+		std::cout << "---------------        " << "Your Score was >>" << nScore << "<<" << endl;
+		this_thread::sleep_for(250ms);
+
+		windowsHelper::getHighScores();
+		if (windowsHelper::checkHighScore(nScore))
+		{
+
+			std::cout << "---------------        " << "Congrats, you scored a High Score! :)" << endl;
+			this_thread::sleep_for(250ms);
+			std::cout << "---------------        " << "Type your name and press enter:" << endl;
+			string name;
+			cin >> name;
+
+			windowsHelper::updateHighscore(pair<string, int>(name, nScore));
+			windowsHelper::writeHighscore();
+		}
+		
+		std::cout << "---------------        _-._.-._ " << "Highscore _-._.-._" << endl;
+		std::cout << "---------------        "<< endl;
+		int index = 0;
+		for (auto hs : windowsHelper::lHighScores)
+		{
+			this_thread::sleep_for(50ms);
+			std::cout << "---------------        " << ++index << ": " << hs.second << " by " << hs.first << endl;
+		}
+
+		this_thread::sleep_for(1000ms);
+
+
+		std::cout << "----------------------------------------------" << endl;
+		std::cout << "---------------        " << "Play Again ? (y/n) " << endl;
 
 		string ans;
 		cin >> ans;
 
 		while (ans != "yes" && ans != "y" && ans != "no" && ans != "n")
 		{
-			cout << "----------------------------------------------" << endl;
-			cout << "		Just type 'yes' or 'no' and press enter ;-)" << endl;
+			std::cout << "----------------------------------------------" << endl;
+			std::cout << "---------------        " << "Just type 'yes' or 'no' and press enter ;-)" << endl;
 			cin >> ans;
 		}
 
 		if (ans != "yes" && ans != "y")
 		{
 
-			cout << "----------------------------------------------" << endl;
-			cout << "		Oh no, you're leaving me :( :( " << endl;
+			std::cout << "----------------------------------------------" << endl;
+			std::cout << "---------------        " << "Oh no, you're leaving me :( :( " << endl;
 
 			this_thread::sleep_for(2000ms);
 
-			cout << "----------------------------------------------" << endl;
-			cout << "		Good bye, see you next time :-)" << endl;
+			std::cout << "----------------------------------------------" << endl;
+			std::cout << "---------------        " << "Good bye, see you next time :-)" << endl;
 
 			this_thread::sleep_for(3000ms);
 		} 
@@ -217,6 +309,7 @@ namespace miscHelper {
 
 int main()
 {
+
 	bool bExit = false;
 	while (!bExit) 
 	{
@@ -236,7 +329,8 @@ int main()
 		int nCurrentPiece = rand() % 7;
 		int nNextPiece = rand() % 7;
 		int nCurrentRot = 0;
-		int nCurrentX = nFieldWidth / 2;
+		int nStartX = nFieldWidth / 2 - 2;
+		int nCurrentX = nStartX;
 		int nCurrentY = 0;
 		int nPieceCount = 0;
 
@@ -316,7 +410,7 @@ int main()
 						}
 
 					// create a new piece
-					nCurrentX = nFieldWidth / 2;
+					nCurrentX = nStartX;
 					nCurrentY = 0;
 					nCurrentRot = 0;
 					nCurrentPiece = nNextPiece;
@@ -356,7 +450,7 @@ int main()
 				{
 					char target = ' ';
 					if (tetromino[nNextPiece][engineHelper::rotate(x, y, 0)] == L'X')
-						target = nNextPiece + 65;
+						target = /*nNextPiece*/1 + 65;
 
 					windowsHelper::screen[(y + 4)*nScreenWidth + (x + nFieldWidth + 14)] = target;
 				}
@@ -376,7 +470,7 @@ int main()
 			// Draw Field ================================
 			for (int x = 0; x < nFieldWidth; x++) {
 				for (int y = 0; y < nFieldHeight; y++) {
-					windowsHelper::screen[(y + 2)*nScreenWidth + (x + 2)] = L" ABCDEFG=#"[pField[y*nFieldWidth + x]];
+					windowsHelper::screen[(y + 2)*nScreenWidth + (x + 2)] = L" BBBBBBB=#"[pField[y*nFieldWidth + x]];
 				}
 			}
 
@@ -384,7 +478,7 @@ int main()
 			for (int x = 0; x < 4; x++)
 				for (int y = 0; y < 4; y++)
 					if (tetromino[nCurrentPiece][engineHelper::rotate(x, y, nCurrentRot)] == L'X')
-						windowsHelper::screen[(nCurrentY + y + 2)*nScreenWidth + nCurrentX + x + 2] = nCurrentPiece + 65;
+						windowsHelper::screen[(nCurrentY + y + 2)*nScreenWidth + nCurrentX + x + 2] = 1/*nCurrentPiece*/ + 65;
 
 			// Draw Line Clear Effect ====================
 			if (!vLines.empty()) {
