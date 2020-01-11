@@ -67,40 +67,41 @@ namespace initHelper
 		tetromino[6].append(L"....");
 	}
 
-	void initBoard() {
+	void initBoard() 
+	{
 		pField = new unsigned char[nFieldWidth*nFieldHeight];
-		for (int x = 0; x < nFieldWidth; x++) {
-			for (int y = 0; y < nFieldHeight; y++) {
+		for (int x = 0; x < nFieldWidth; x++) 
+			for (int y = 0; y < nFieldHeight; y++) 
 				pField[y*nFieldWidth + x] = (x == 0 || x == nFieldWidth - 1 || y == nFieldHeight - 1) ? 9 : 0;
-			}
-		}
 	}
 
-	void initScoreBoard() {
+	void initScoreBoard() 
+	{
 		pScoreBoard = new unsigned char[nScoreWidth*nScoreHeight];
-		for (int x = 0; x < nScoreWidth; x++) {
+		for (int x = 0; x < nScoreWidth; x++) 
 			for (int y = 0; y < nScoreHeight; y++) {
 				int nScoreBoardVal = 0;
 				if (y == 0 || y == nScoreHeight - 1) nScoreBoardVal = 2;
 				else if (x == 0 || x == nScoreWidth - 1) nScoreBoardVal = 1;
 				pScoreBoard[y*nScoreWidth + x] = nScoreBoardVal;
 			}
-		}
 	}
 
-	void initNextPiece() {
+	void initNextPiece() 
+	{
 		pPiece = new unsigned char[nPieceWidth*nPieceHeight];
-		for (int x = 0; x < nPieceWidth; x++) {
-			for (int y = 0; y < nPieceHeight; y++) {
+		for (int x = 0; x < nPieceWidth; x++) 
+			for (int y = 0; y < nPieceHeight; y++) 
+			{
 				int nPieceVal = 0;
 				if (y == 0 || y == nPieceHeight - 1) nPieceVal = 2;
 				else if (x == 0 || x == nPieceWidth - 1) nPieceVal = 1;
 				pPiece[y*nPieceWidth + x] = nPieceVal;
 			}
-		}
 	}
 
-	void deleteFields() {
+	void deleteFields() 
+	{
 		delete[] pField;
 		delete[] pScoreBoard;
 		delete[] pPiece;
@@ -128,7 +129,8 @@ namespace engineHelper
 		@posX: x position of top-left corner of tetromino
 		@posY: y position of top-left corner of tetromino
 	*/ 
-	bool doesPieceFit(int nTetromino, int rot, int posX, int posY) {
+	bool doesPieceFit(int nTetromino, int rot, int posX, int posY) 
+	{
 		for (int x = 0; x < 4; x++) 
 			for (int y = 0; y < 4; y++)
 			{
@@ -136,18 +138,15 @@ namespace engineHelper
 				int fi = (posX + x) + (posY + y)*nFieldWidth;
 
 				if ((posX + x) >= 0 && (posX + x) < nFieldWidth) 
-				{
 					if ((posY+ y) >= 0 && (posY + y) < nFieldHeight) 
-					{
 						if (tetromino[nTetromino][pi] == L'X' && pField[fi] != 0) 
 							return false;
-					}
-				}
 			}
 		return true;
 	}
 
-	void addPieceToBackground(int nTetromino, int rot, int posX, int posY) {
+	void addPieceToBackground(int nTetromino, int rot, int posX, int posY) 
+	{
 		for (int x = 0; x < 4; x++)
 			for (int y = 0; y < 4; y++)
 			{
@@ -159,19 +158,22 @@ namespace engineHelper
 	}
 }
 
-namespace windowsHelper {
+namespace windowsHelper 
+{
 	HANDLE hConsole;
 	wchar_t *screen = nullptr;
 	DWORD dwBytesWritten = 0;
 
-	void initConsoleWindow() {
+	void initConsoleWindow() 
+	{
 		screen = new wchar_t[nScreenWidth*nScreenHeight];
 		for (int i = 0; i < nScreenWidth*nScreenHeight; i++) screen[i] = L' ';
 		hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 		SetConsoleActiveScreenBuffer(hConsole);
 	}
 
-	void deleteScreen() {
+	void deleteScreen() 
+	{
 		delete[] screen;
 	}
 
@@ -204,10 +206,8 @@ namespace windowsHelper {
 	{
 		if (lHighScores.size() < nHighScoreCount) return true;
 		for (auto hs = lHighScores.begin(); hs != lHighScores.end(); hs++)
-			if (score > hs->second) {
+			if (score > hs->second) 
 				return true;
-			}
-
 		return false;
 	}
 
@@ -230,18 +230,18 @@ namespace windowsHelper {
 		if (lHighScores.empty())
 			lHighScores.push_back(pCandidate);
 		else
-		{
 			for (auto hs = lHighScores.begin(); hs != lHighScores.end(); hs++)
-				if (pCandidate.second > hs->second) {
+				if (pCandidate.second > hs->second) 
+				{
 					lHighScores.insert(hs, pCandidate);
 					while (lHighScores.size() > nHighScoreCount) lHighScores.pop_back();
 					break;
 				}
-		}
 	}
 }
 
-namespace miscHelper {
+namespace miscHelper 
+{
 	bool handleGameOver(int nScore) 
 	{
 		system("cls");
@@ -305,6 +305,20 @@ namespace miscHelper {
 
 		return ans == "no" || ans == "n";
 	}
+
+	void handlePause()
+	{
+		swprintf_s(&windowsHelper::screen[(nFieldHeight / 2 + 2)*nScreenWidth + (nFieldWidth / 3 + 2)], 6, L"Pause"); // text
+		WriteConsoleOutputCharacter(windowsHelper::hConsole, windowsHelper::screen, nScreenWidth * nScreenHeight, { 0,0 }, &windowsHelper::dwBytesWritten);
+
+		while (true)
+		{
+			this_thread::sleep_for(150ms);
+			bool res = ((0x8000 & GetAsyncKeyState((unsigned char)("\x50"[0]))) != 0 || (0x8000 & GetAsyncKeyState((unsigned char)("\x1B"[0]))) != 0);
+			if (res)
+				break;
+		}
+	}
 }
 
 int main()
@@ -335,8 +349,10 @@ int main()
 		int nPieceCount = 0;
 
 		// Input
-		bool bKey[4];
+		const int keyCount = 6;
+		bool bKey[keyCount];
 		bool bRotateHold = false;
+		bool bPauseHold = false;
 
 		// Timing 
 		int nSpeed = 18;
@@ -361,20 +377,32 @@ int main()
 				nTicker++;
 
 			// Input =====================================
-			for (int k = 0; k < 4; k++)								// R	L	D	ctrl-l
-				bKey[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x27\x25\x28\xA2"[k]))) != 0;
+			for (int k = 0; k < keyCount; k++)						// R	L	D  ctrl-l p esc
+				bKey[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x27\x25\x28\xA2\x50\x1B"[k]))) != 0;
 		
 			// Game Logic ================================
 
 			nCurrentX += (bKey[0] && engineHelper::doesPieceFit(nCurrentPiece, nCurrentRot, nCurrentX + 1, nCurrentY)) ? 1 : 0;
 			nCurrentX -= (bKey[1] && engineHelper::doesPieceFit(nCurrentPiece, nCurrentRot, nCurrentX - 1, nCurrentY)) ? 1 : 0;
 			nCurrentY += (bKey[2] && engineHelper::doesPieceFit(nCurrentPiece, nCurrentRot, nCurrentX, nCurrentY + 1)) ? 1 : 0;
-			if (bKey[3]) {
+			if (bKey[3]) 
+			{
 				nCurrentRot += (!bRotateHold && engineHelper::doesPieceFit(nCurrentPiece, nCurrentRot + 1, nCurrentX, nCurrentY)) ? 1 : 0;
 				bRotateHold = true;
 			}
 			else
 				bRotateHold = false;
+
+
+			if (bKey[4] || bKey[5]) // Pause
+			{
+				if (!bPauseHold)
+					miscHelper::handlePause();
+				bPauseHold = true;
+			}
+			else
+				bPauseHold = false;;
+
 		
 			if (bForceDown) 
 			{
@@ -432,16 +460,15 @@ int main()
 				bForceDown = false;
 			}
 
+				
+
 			// Render Output =============================
 
 			// Draw Next Piece
 			for (int x = 0; x < nPieceWidth; x++) // border
-			{ 
-				for (int y = 0; y < nPieceHeight; y++) {
+				for (int y = 0; y < nPieceHeight; y++)
 					if (y == 0 || y == nPieceHeight - 1 || x == 0 || x == nPieceWidth - 1)
 						windowsHelper::screen[(y + 2)*nScreenWidth + (x + nFieldWidth + 4)] = L" |-"[pPiece[y*nPieceWidth + x]];
-				}
-			}
 
 			swprintf_s(&windowsHelper::screen[(nPieceHeight/2 + 2)*nScreenWidth + (1 + nFieldWidth + 5)], 6, L"Next:"); // text
 
@@ -457,23 +484,17 @@ int main()
 
 			// Draw Scoreboard
 			for (int x = 0; x < nScoreWidth; x++) // border
-			{ 
-				for (int y = 0; y < nScoreHeight; y++) 
-				{
+				for (int y = 0; y < nScoreHeight; y++)
 					if (y == 0 || y == nScoreHeight - 1 || x == 0 || x == nScoreWidth - 1)
 						windowsHelper::screen[(y + 10)*nScreenWidth + (x + nFieldWidth + 4)] = L" |-"[pScoreBoard[y*nScoreWidth + x]];
-				}
-			}
 
 			swprintf_s(&windowsHelper::screen[(nScoreHeight / 2 + 10)*nScreenWidth + nFieldWidth + 4 + 2], 16, L"SCORE: %8d", nScore); // text
 
 			// Draw Field ================================
-			for (int x = 0; x < nFieldWidth; x++) {
-				for (int y = 0; y < nFieldHeight; y++) {
+			for (int x = 0; x < nFieldWidth; x++) 
+				for (int y = 0; y < nFieldHeight; y++) 
 					windowsHelper::screen[(y + 2)*nScreenWidth + (x + 2)] = L" BBBBBBB=#"[pField[y*nFieldWidth + x]];
-				}
-			}
-
+				
 			// Draw Current Piece ========================
 			for (int x = 0; x < 4; x++)
 				for (int y = 0; y < 4; y++)
@@ -481,7 +502,8 @@ int main()
 						windowsHelper::screen[(nCurrentY + y + 2)*nScreenWidth + nCurrentX + x + 2] = 1/*nCurrentPiece*/ + 65;
 
 			// Draw Line Clear Effect ====================
-			if (!vLines.empty()) {
+			if (!vLines.empty()) 
+			{
 				WriteConsoleOutputCharacter(windowsHelper::hConsole, windowsHelper::screen, nScreenWidth * nScreenHeight, { 0,0 }, &windowsHelper::dwBytesWritten);
 				this_thread::sleep_for(250ms);
 
@@ -489,6 +511,9 @@ int main()
 					for (int y = line; y > 0; y--) // from current line upwards
 						for (int x = 1; x < nFieldWidth-1; x++) // leave the borders
 							pField[x + y * nFieldWidth] = pField[x + (y - 1)*nFieldWidth];
+
+				for (int x = 1; x < nFieldWidth - 1; x++) // clear first line
+					pField[x] = 0;
 
 				vLines.clear();
 			}
